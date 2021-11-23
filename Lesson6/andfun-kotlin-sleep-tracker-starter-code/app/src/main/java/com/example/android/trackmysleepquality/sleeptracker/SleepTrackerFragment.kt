@@ -20,14 +20,17 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.findNavController
+import androidx.recyclerview.widget.GridLayoutManager
 import com.example.android.trackmysleepquality.R
 import com.example.android.trackmysleepquality.database.SleepDatabase
 import com.example.android.trackmysleepquality.database.SleepDatabaseDao
+import com.example.android.trackmysleepquality.database.SleepNight
 import com.example.android.trackmysleepquality.databinding.FragmentSleepTrackerBinding
 import com.google.android.material.snackbar.Snackbar
 import java.security.Provider
@@ -61,15 +64,30 @@ class SleepTrackerFragment : Fragment() {
         binding.setLifecycleOwner(this)
         binding.sleepTrackerViewModel = sleepVieweModel
 
-        val adapter = SleepNightAdapter()
+        val manager = GridLayoutManager(activity, 3);
+
+        manager.spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
+            override fun getSpanSize(position: Int) =  when (position) {
+                0 -> 3
+                else -> 1
+            }
+        }
+
+        binding.sleepList.layoutManager = manager
+
+        val adapter = SleepNightAdapter(SleepNightListener {
+            //Toast.makeText(context, "${it}", Toast.LENGTH_LONG).show()
+            sleepVieweModel.onSleepNightClicked(it)
+        })
         binding.sleepList.adapter = adapter
 
         sleepVieweModel.nights.observe(viewLifecycleOwner, Observer {
             it?.let {
                 /*adapter.data = it*/
-                adapter.submitList(it)
+                adapter.addHeaderAndSubmitList(it)
             }
         })
+
 
 
         sleepVieweModel.navigateToSleepQuality.observe(viewLifecycleOwner, Observer {
@@ -92,6 +110,19 @@ class SleepTrackerFragment : Fragment() {
             sleepVieweModel.doneShowingSnackbar()
         }})
 
+        sleepVieweModel.navigateToSleepDataQuality.observe(viewLifecycleOwner, Observer { night ->
+            night?.let{
+                this.findNavController().navigate(SleepTrackerFragmentDirections
+                    .actionSleepTrackerFragmentToSleepDetailFragment(night))
+                sleepVieweModel.onSleepDataQualityNavigated()
+            }
+        })
+
         return binding.root
     }
 }
+
+class SleepNightListener(val clickListener : (sleepId:Long) ->Unit){
+    fun onClick(night:SleepNight)= clickListener(night.nightId)
+}
+
