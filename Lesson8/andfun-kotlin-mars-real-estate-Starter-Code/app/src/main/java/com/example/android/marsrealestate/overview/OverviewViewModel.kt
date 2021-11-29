@@ -41,9 +41,9 @@ class OverviewViewModel : ViewModel() {
     val status : LiveData<String>
         get() = _status
 
-    private val _property = MutableLiveData<MarsProperty>()
-    val property : LiveData<MarsProperty>
-        get() = _property
+    private val _properties = MutableLiveData<List<MarsProperty>>()
+    val properties : LiveData<List<MarsProperty>>
+        get() = _properties
 
 //    private val _response = MutableLiveData<String>()
 //
@@ -69,7 +69,7 @@ class OverviewViewModel : ViewModel() {
             var getPropertiesDeferred = MarsApi.retrofitService.getProperties()
             try {
                 var listResult = getPropertiesDeferred.await()
-                _property.value = listResult[0]
+                _properties.value = listResult
             } catch (e: Exception) {
                 _status.value = "Failure: ${e.message}"
             }
